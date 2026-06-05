@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
-from geopy.distance import geodesic
+from pathlib import Path
+
+# ---------------------------------------------------
+# PAGE CONFIG
+# ---------------------------------------------------
 
 st.set_page_config(
     page_title="Fleet Vehicle Telematics Analyzer",
@@ -10,260 +12,126 @@ st.set_page_config(
     layout="wide"
 )
 
+# ---------------------------------------------------
+# DATA LOADING
+# ---------------------------------------------------
+
+@st.cache_data
+def load_data():
+
+    # Absolute path (works locally and on Streamlit Cloud)
+    DATA_PATH = (
+        Path(__file__).resolve().parent
+        / "data"
+        / "dynamic_supply_chain_logistics_dataset.csv"
+    )
+
+    if not DATA_PATH.exists():
+
+        st.error(
+            f"Dataset not found:\n{DATA_PATH}"
+        )
+        st.stop()
+
+    df = pd.read_csv(DATA_PATH)
+
+    return df
+
+
+df = load_data()
+
+# ---------------------------------------------------
+# HEADER
+# ---------------------------------------------------
+
 st.title("🚛 Fleet Vehicle Telematics Analyzer")
 
-# Load Data
-df = pd.read_csv("dynamic_supply_chain_logistics_dataset.csv")
+st.markdown("""
+### Smart Fleet Monitoring Dashboard
 
-# -------------------------
-# DATA PREPARATION
-# -------------------------
+This solution provides:
 
-df["timestamp"] = pd.to_datetime(df["timestamp"])
+- 🚚 Fleet Overview
+- ⛽ Fuel Consumption Analytics
+- 🛑 Idling Detection
+- 🏆 Driver Scorecards
+- 🛣️ Route Efficiency Analysis
+- 📍 GPS Tracking
+- 📈 Operational Insights
+- ⚠️ Risk Monitoring
+""")
 
-# Create Vehicle IDs
-df["Vehicle_ID"] = (
-    "TRUCK_" +
-    (df.index % 25 + 1).astype(str)
-)
+st.divider()
 
-df = df.sort_values(
-    ["Vehicle_ID", "timestamp"]
-)
+# ---------------------------------------------------
+# DATASET INFO
+# ---------------------------------------------------
 
-# Time Delta
-df["Time_Delta_Hours"] = (
-    df.groupby("Vehicle_ID")["timestamp"]
-      .diff()
-      .dt.total_seconds()
-      .div(3600)
-)
+col1, col2, col3 = st.columns(3)
 
-# Previous Coordinates
-df["Prev_Lat"] = (
-    df.groupby("Vehicle_ID")
-    ["vehicle_gps_latitude"]
-    .shift(1)
-)
-
-df["Prev_Lon"] = (
-    df.groupby("Vehicle_ID")
-    ["vehicle_gps_longitude"]
-    .shift(1)
-)
-
-# Distance Calculation
-def calc_distance(row):
-    try:
-        return geodesic(
-            (row["Prev_Lat"], row["Prev_Lon"]),
-            (
-                row["vehicle_gps_latitude"],
-                row["vehicle_gps_longitude"]
-            )
-        ).km
-    except:
-        return 0
-
-df["Distance_KM"] = df.apply(
-    calc_distance,
-    axis=1
-)
-
-# Speed Estimation
-df["Speed_KMH"] = (
-    df["Distance_KM"] /
-    df["Time_Delta_Hours"]
-)
-
-df["Speed_KMH"] = (
-    df["Speed_KMH"]
-    .replace([np.inf, -np.inf], 0)
-    .fillna(0)
-)
-
-# Sidebar
-st.sidebar.header("⚙ Fleet Controls")
-
-vehicle = st.sidebar.selectbox(
-    "Select Vehicle",
-    sorted(df["Vehicle_ID"].unique())
-)
-
-idling_threshold = st.sidebar.slider(
-    "Fuel Threshold",
-    0.1,
-    5.0,
-    0.5
-)
-
-vehicle_df = df[
-    df["Vehicle_ID"] == vehicle
-]
-
-# -------------------------
-# IDLING DETECTION
-# -------------------------
-
-vehicle_df["Is_Idling"] = (
-    (vehicle_df["Speed_KMH"] < 5)
-    &
-    (vehicle_df["fuel_consumption_rate"]
-     > idling_threshold)
-)
-
-# KPIs
-
-c1, c2, c3, c4 = st.columns(4)
-
-c1.metric(
-    "Total Fuel Used",
-    round(
-        vehicle_df["fuel_consumption_rate"].sum(),
-        2
+with col1:
+    st.metric(
+        "Total Records",
+        len(df)
     )
-)
 
-c2.metric(
-    "Average Speed",
-    round(
-        vehicle_df["Speed_KMH"].mean(),
-        2
+with col2:
+    st.metric(
+        "Total Columns",
+        len(df.columns)
     )
-)
 
-c3.metric(
-    "Idling Events",
-    int(
-        vehicle_df["Is_Idling"].sum()
+with col3:
+    st.metric(
+        "Dataset Size",
+        f"{round(df.memory_usage().sum()/1024/1024,2)} MB"
     )
-)
 
-c4.metric(
-    "Route Distance",
-    round(
-        vehicle_df["Distance_KM"].sum(),
-        2
-    )
-)
+# ---------------------------------------------------
+# PREVIEW
+# ---------------------------------------------------
 
-# -------------------------
-# MAP
-# -------------------------
-
-st.subheader("🗺 Fleet Route Map")
-
-st.map(
-    vehicle_df[
-        [
-            "vehicle_gps_latitude",
-            "vehicle_gps_longitude"
-        ]
-    ]
-)
-
-# -------------------------
-# SPEED ANALYSIS
-# -------------------------
-
-st.subheader("📈 Speed Trend")
-
-fig = px.line(
-    vehicle_df,
-    x="timestamp",
-    y="Speed_KMH"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
-# -------------------------
-# FUEL ANALYSIS
-# -------------------------
-
-st.subheader("⛽ Fuel Consumption")
-
-fuel_fig = px.histogram(
-    vehicle_df,
-    x="fuel_consumption_rate",
-    nbins=30
-)
-
-st.plotly_chart(
-    fuel_fig,
-    use_container_width=True
-)
-
-# -------------------------
-# DRIVER SCORECARD
-# -------------------------
-
-driver_scores = (
-    df.groupby("Vehicle_ID")
-    .agg(
-        Fuel_Waste=(
-            "fuel_consumption_rate",
-            "sum"
-        ),
-        Avg_Speed=(
-            "Speed_KMH",
-            "mean"
-        ),
-        Driver_Score=(
-            "driver_behavior_score",
-            "mean"
-        )
-    )
-    .reset_index()
-)
-
-driver_scores = (
-    driver_scores
-    .sort_values("Fuel_Waste")
-)
-
-st.subheader(
-    "🏆 Driver Efficiency Ranking"
-)
+st.subheader("📄 Dataset Preview")
 
 st.dataframe(
-    driver_scores,
+    df.head(20),
     use_container_width=True
 )
 
-# -------------------------
-# INSIGHTS
-# -------------------------
+# ---------------------------------------------------
+# COLUMN INFO
+# ---------------------------------------------------
 
-st.subheader("🔍 AI Insights")
+st.subheader("📊 Dataset Columns")
 
-fuel_waste = (
-    vehicle_df["fuel_consumption_rate"]
-    .sum()
+st.write(list(df.columns))
+
+# ---------------------------------------------------
+# SIDEBAR
+# ---------------------------------------------------
+
+st.sidebar.success(
+    "Select a dashboard page from the sidebar."
 )
 
-idle_count = (
-    vehicle_df["Is_Idling"]
-    .sum()
-)
+st.sidebar.markdown("""
+### Available Dashboards
 
-if idle_count > 50:
-    st.error(
-        "High idling detected."
-    )
-else:
-    st.success(
-        "Vehicle operating efficiently."
-    )
+🚛 Fleet Overview
+
+⛽ Idling Analysis
+
+🏆 Driver Scorecard
+
+🛣️ Route Efficiency
+""")
+
+# ---------------------------------------------------
+# FOOTER
+# ---------------------------------------------------
+
+st.markdown("---")
 
 st.info(
-    f"""
-    Fuel Consumed : {fuel_waste:.2f}
-
-    Idling Events : {idle_count}
-
-    Avg Speed : {vehicle_df['Speed_KMH'].mean():.2f}
-    """
+    "Fleet Vehicle Telematics Analyzer | Streamlit Dashboard"
 )
