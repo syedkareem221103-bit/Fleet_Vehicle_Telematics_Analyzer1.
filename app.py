@@ -13,7 +13,7 @@ st.set_page_config(
 st.title("🚛 Fleet Vehicle Telematics Analyzer")
 
 # Load Data
-df = pd.read_csv("data/logistics_dataset.csv")
+df = pd.read_csv("dynamic_supply_chain_logistics_dataset.csv")
 
 # -------------------------
 # DATA PREPARATION
