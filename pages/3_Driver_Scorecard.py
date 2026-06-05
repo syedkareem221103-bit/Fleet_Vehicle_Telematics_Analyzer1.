@@ -22,7 +22,9 @@ st.markdown(
 @st.cache_data
 def load_data():
 
-    df = pd.read_csv("data/logistics_dataset.csv")
+    df = pd.read_csv(
+    "data/dynamic_supply_chain_logistics_dataset.csv"
+    )
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
