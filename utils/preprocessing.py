@@ -366,9 +366,8 @@ def preprocess_data(file_path):
 if __name__ == "__main__":
 
     dataset = preprocess_data(
-        "data/logistics_dataset.csv"
+    "data/dynamic_supply_chain_logistics_dataset.csv"
     )
-
     print(dataset.head())
 
     print(
