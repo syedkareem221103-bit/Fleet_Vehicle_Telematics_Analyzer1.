@@ -240,14 +240,18 @@ idle_locations = filtered_df[
 
 if len(idle_locations) > 0:
 
-    st.map(
-        idle_locations[
-            [
-                "vehicle_gps_latitude",
-                "vehicle_gps_longitude"
-            ]
-        ]
-    )
+    map_df = idle_locations.rename(
+    columns={
+        "vehicle_gps_latitude": "lat",
+        "vehicle_gps_longitude": "lon"
+    }
+)
+
+st.map(
+    map_df[
+        ["lat", "lon"]
+    ]
+)
 
 else:
 
