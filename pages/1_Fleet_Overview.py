@@ -160,12 +160,16 @@ st.divider()
 # -----------------------------
 st.subheader("🗺 Fleet GPS Route Tracking")
 
+map_df = filtered_df.rename(
+    columns={
+        "vehicle_gps_latitude": "lat",
+        "vehicle_gps_longitude": "lon"
+    }
+)
+
 st.map(
-    filtered_df[
-        [
-            "vehicle_gps_latitude",
-            "vehicle_gps_longitude"
-        ]
+    map_df[
+        ["lat", "lon"]
     ]
 )
 
