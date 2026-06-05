@@ -16,12 +16,16 @@ def show_vehicle_map(df):
 
     if len(df) > 0:
 
+        map_df = df.rename(
+            columns={
+                "vehicle_gps_latitude": "lat",
+                "vehicle_gps_longitude": "lon"
+            }
+        )
+
         st.map(
-            df[
-                [
-                    "vehicle_gps_latitude",
-                    "vehicle_gps_longitude"
-                ]
+            map_df[
+                ["lat", "lon"]
             ]
         )
 
@@ -37,6 +41,7 @@ def show_vehicle_map(df):
 # ---------------------------------------------------
 
 def show_idling_hotspots(df):
+def show_idling_hotspots(df):
 
     """
     Show locations where idling occurs.
@@ -48,12 +53,16 @@ def show_idling_hotspots(df):
 
     if len(idle_df) > 0:
 
+        map_df = idle_df.rename(
+            columns={
+                "vehicle_gps_latitude": "lat",
+                "vehicle_gps_longitude": "lon"
+            }
+        )
+
         st.map(
-            idle_df[
-                [
-                    "vehicle_gps_latitude",
-                    "vehicle_gps_longitude"
-                ]
+            map_df[
+                ["lat", "lon"]
             ]
         )
 
@@ -87,12 +96,16 @@ def route_map(df, vehicle_id):
 
         return
 
+    map_df = route_df.rename(
+        columns={
+            "vehicle_gps_latitude": "lat",
+            "vehicle_gps_longitude": "lon"
+        }
+    )
+
     st.map(
-        route_df[
-            [
-                "vehicle_gps_latitude",
-                "vehicle_gps_longitude"
-            ]
+        map_df[
+            ["lat", "lon"]
         ]
     )
 
