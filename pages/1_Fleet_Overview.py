@@ -292,18 +292,25 @@ st.dataframe(
 # -----------------------------
 st.subheader("⚠ Risk Score Distribution")
 
-risk_fig = px.histogram(
-    df,
-    x="risk_score",
-    nbins=30,
-    title="Risk Score Distribution"
-)
+if "risk_score" in df.columns:
 
-st.plotly_chart(
-    risk_fig,
-    use_container_width=True
-)
+    risk_fig = px.histogram(
+        df,
+        x="risk_score",
+        nbins=30,
+        title="Risk Score Distribution"
+    )
 
+    st.plotly_chart(
+        risk_fig,
+        use_container_width=True
+    )
+
+else:
+
+    st.warning(
+        "risk_score column not found in dataset."
+    )
 # -----------------------------
 # TOP PERFORMING VEHICLES
 # -----------------------------
