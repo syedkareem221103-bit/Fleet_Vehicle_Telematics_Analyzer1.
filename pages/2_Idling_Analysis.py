@@ -241,19 +241,17 @@ idle_locations = filtered_df[
 if len(idle_locations) > 0:
 
     map_df = idle_locations.rename(
-    columns={
-        "vehicle_gps_latitude": "lat",
-        "vehicle_gps_longitude": "lon"
-    }
-)
+        columns={
+            "vehicle_gps_latitude": "lat",
+            "vehicle_gps_longitude": "lon"
+        }
+    )
 
-st.map(
-    map_df[
-        ["lat", "lon"]
-    ]
-)
+    st.map(map_df[["lat", "lon"]])
 
 else:
+
+    st.success("No idling locations detected.")
 
     st.success(
         "No idling locations detected."
