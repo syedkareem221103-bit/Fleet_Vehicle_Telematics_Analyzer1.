@@ -127,18 +127,20 @@ driver_df = (
         Fuel_Usage=(
             "fuel_consumption_rate",
             "sum"
-        ),
-        Driver_Behavior=(
-            "driver_behavior_score",
-            "mean"
-        ),
-        Risk_Score=(
-            "risk_score",
-            "mean"
         )
     )
     .reset_index()
 )
+
+# Create synthetic scores
+
+driver_df["Driver_Behavior"] = (
+    driver_df["Avg_Speed"] / driver_df["Avg_Speed"].max()
+) * 100
+
+driver_df["Risk_Score"] = (
+    driver_df["Fuel_Usage"] / driver_df["Fuel_Usage"].max()
+) * 100
 
 # ------------------------------------------------
 # CALCULATED SCORES
